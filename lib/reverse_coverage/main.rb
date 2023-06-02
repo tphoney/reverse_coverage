@@ -51,15 +51,11 @@ module ReverseCoverageRspec
     end
 
     def save_results(file_name: 'reverse_coverage.yml')
-      result_and_stop_coverage
+      Coverage.result
       path = File.join(output_path, file_name)
       FileUtils.mkdir_p(output_path)
 
       File.write(path, @coverage_matrix.sort.to_h.to_yaml)
-    end
-
-    def result_and_stop_coverage
-      Coverage.result
     end
 
     class << self
@@ -90,29 +86,36 @@ module ReverseCoverageMinitest
 
     def add(test_information)
       coverage_result = Coverage.peek_result
-      example_data = test_information
       current_state = select_project_files(coverage_result)
       all_changed_files = changed_lines(@last_state, current_state)
 
-      changes = {}
+      # changes = {}
       all_changed_files.each do |file_path, lines|
-        lines.each_with_index do |changed, line_index|
-          next if changed.nil? || changed.zero?
+        # if lines array contains any non-zero values, then save the changes and move to the next file
+        non_nil_lines = lines.any? { |changed| !changed.nil? && !changed.zero? }
+        #binding.pry
+        # break loop if there are no changes, or if the test_information is already in the coverage_matrix
+        next if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(test_information))
+        # binding.pry
+        save_changes(coverage_matrix, file_path, test_information)
 
-          save_changes(changes, example_data, file_path: file_path, line_index: line_index)
-          save_changes(coverage_matrix, example_data, file_path: file_path, line_index: line_index)
-        end
+        # lines.each_with_index do |changed, line_index|
+        #   next if changed.nil? || changed.zero?
+        #   binding.pry
+        #   # save_changes(changes, test_information, file_path: file_path, line_index: line_index)
+        #   save_changes(coverage_matrix, test_information, file_path: file_path, line_index: line_index)
+        # end
       end
 
       reset_last_state
-      changes
+      # changes
     end
 
     def initialize
       @config = {
         file_filter: ->(file_path) { file_of_project?(file_path) }
       }
-      @output_path = 'tmp'
+      @output_path = OUTPUT_PATH
     end
 
     def reset_last_state(result = Coverage.peek_result)
@@ -124,16 +127,9 @@ module ReverseCoverageMinitest
       reset_last_state
     end
 
-    def save_results(file_name: 'reverse_coverage.yml')
-      result_and_stop_coverage
-      path = File.join(output_path, file_name)
-      FileUtils.mkdir_p(output_path)
-
-      File.write(path, @coverage_matrix.sort.to_h.to_yaml)
-    end
-
-    def result_and_stop_coverage
+    def save_results()
       Coverage.result
+      results_to_file(@coverage_matrix, file_name: OUTPUT_FILE_NAME)
     end
 
     class << self
@@ -149,10 +145,12 @@ module ReverseCoverageMinitest
 end
 
 module ReverseCoverage
-  def save_changes(hash, example_data, file_path:, line_index:)
-    hash[file_path] ||= {}
-    hash[file_path][line_index] ||= []
-    hash[file_path][line_index] << example_data
+  OUTPUT_FILE_NAME = 'reverse_coverage.yml'
+  OUTPUT_PATH = 'tmp'
+
+  def save_changes(hash, file_path, test_information )
+    hash[file_path] ||= []
+    hash[file_path] << test_information
   end
 
   def slice_attributes(hash, *keys)
@@ -170,10 +168,17 @@ module ReverseCoverage
   end
 
   def select_project_files(coverage_result)
+    # binding.pry
     coverage_result.select { |file_path, _lines| @config[:file_filter].call(file_path) }
   end
 
   def file_of_project?(file_path)
     file_path.start_with?(Dir.pwd) && !file_path.start_with?(Dir.pwd + '/spec')
+  end
+
+  def results_to_file(coverage_matrix, file_name: OUTPUT_FILE_NAME)
+    path = File.join(output_path, file_name)
+    FileUtils.mkdir_p(output_path)
+    File.write(path, coverage_matrix.sort.to_h.to_yaml)
   end
 end
