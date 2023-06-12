@@ -21,7 +21,7 @@ RSpec.describe ReverseCoverage do
 
     before do
       start_reverse_coverage
-      require_relative '../../spec/faked_project/lib/faked_project.rb'
+      require_relative '../../spec/faked_project/lib/faked_project'
       example.call
     end
 
@@ -51,7 +51,7 @@ RSpec.describe ReverseCoverage do
     before do
       reverse_coverage.config[:file_filter] = ->(file_path) { file_path.include? 'faked_project' }
       reverse_coverage.start
-      require_relative '../../spec/faked_project/lib/faked_project.rb'
+      require_relative '../../spec/faked_project/lib/faked_project'
     end
 
     it 'returns only the lines executed after reset' do |e|
@@ -77,7 +77,7 @@ RSpec.describe ReverseCoverage do
     before do
       reverse_coverage.config[:file_filter] = ->(file_path) { file_path.include? 'faked_project' }
       reverse_coverage.start
-      require_relative '../../spec/faked_project/lib/faked_project.rb'
+      require_relative '../../spec/faked_project/lib/faked_project'
     end
 
     it 'resets the coverage_matrix' do |e|
