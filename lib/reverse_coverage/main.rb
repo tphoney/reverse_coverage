@@ -1,7 +1,10 @@
 # frozen_string_literal: true
+
 Coverage.start
 
+# rspec support
 module ReverseCoverageRspec
+  # uses singleton pattern to allow the use of the same instance of the class
   class Main
     include Singleton
     include ReverseCoverage
@@ -21,7 +24,10 @@ module ReverseCoverageRspec
         # if lines array contains any non-zero values, then save the changes and move to the next file
         non_nil_lines = lines.any? { |changed| !changed.nil? && !changed.zero? }
         # break loop if there are no changes, or if the current_test_file is already in the coverage_matrix
-        next if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(current_test_file))
+        if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(current_test_file))
+          next
+        end
+
         save_changes(coverage_matrix, file_path, current_test_file)
       end
 
@@ -34,7 +40,7 @@ module ReverseCoverageRspec
 
     def initialize
       @config = {
-        file_filter: ->(file_path) { file_of_project?(file_path, "/spec") }
+        file_filter: ->(file_path) { file_of_project?(file_path, '/spec') }
       }
       @output_path = 'tmp'
     end
@@ -48,9 +54,9 @@ module ReverseCoverageRspec
       reset_last_state
     end
 
-    def save_results(file_name: 'reverse_coverage.yml')
+    def save_results
       Coverage.result
-      results_to_file(@coverage_matrix, "_spec.rb")
+      results_to_file(@coverage_matrix)
     end
 
     class << self
@@ -65,13 +71,15 @@ module ReverseCoverageRspec
   end
 end
 
+# mini-test support
 module ReverseCoverageMinitest
   def after_setup
     super
-    testFile = self.method(self.name).source_location.first
-    Main.add(testFile)
+    test_file = method(name).source_location.first
+    Main.add(test_file)
   end
 
+  # uses singleton pattern to allow the use of the same instance of the class
   class Main
     include Singleton
     include ReverseCoverage
@@ -88,16 +96,19 @@ module ReverseCoverageMinitest
         # if lines array contains any non-zero values, then save the changes and move to the next file
         non_nil_lines = lines.any? { |changed| !changed.nil? && !changed.zero? }
         # break loop if there are no changes, or if the test_information is already in the coverage_matrix
-        next if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(test_information))
+        if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(test_information))
+          next
+        end
+
         save_changes(coverage_matrix, file_path, test_information)
       end
 
-      reset_last_state
+      reset_last_state(coverage_result)
     end
 
     def initialize
       @config = {
-        file_filter: ->(file_path) { file_of_project?(file_path, "/test") }
+        file_filter: ->(file_path) { file_of_project?(file_path, '/test') }
       }
       @output_path = OUTPUT_PATH
     end
@@ -111,9 +122,9 @@ module ReverseCoverageMinitest
       reset_last_state
     end
 
-    def save_results()
+    def save_results
       Coverage.result
-      results_to_file(@coverage_matrix, "_test.rb")
+      results_to_file(@coverage_matrix)
     end
 
     class << self
@@ -128,14 +139,13 @@ module ReverseCoverageMinitest
   end
 end
 
+# helper methods
 module ReverseCoverage
-  require 'digest/md5'
-
   OUTPUT_FILE_NAME = 'reverse_coverage.json'
   OUTPUT_CSV_FILE_NAME = 'reverse_coverage.csv'
   OUTPUT_PATH = 'tmp'
 
-  def save_changes(hash, file_path, test_information )
+  def save_changes(hash, file_path, test_information)
     hash[file_path] ||= []
     hash[file_path] << test_information
   end
@@ -158,7 +168,7 @@ module ReverseCoverage
     file_path.start_with?(Dir.pwd) && !file_path.start_with?(Dir.pwd + test_root)
   end
 
-  def results_to_file(coverage_matrix, test_file_suffix)
+  def results_to_file(coverage_matrix)
     FileUtils.mkdir_p(OUTPUT_PATH)
     csv_file = File.join(OUTPUT_PATH, OUTPUT_CSV_FILE_NAME)
     json_file = File.join(OUTPUT_PATH, OUTPUT_FILE_NAME)
@@ -181,13 +191,13 @@ module ReverseCoverage
         block = "#{counter} {\n"
         block += "  \"test\": {\n"
         block += "    \"id\": #{hashed_test_file},\n"
-        block += '    "file": "' + test_file + "\"\n"
+        block += "    \"file\": \"#{test_file}\"\n"
         block += "  },\n"
         block += "  \"source\": {\n"
         block += "    \"id\": #{hashed_path},\n"
-        block += '    "file": "' + file_path + "\"\n"
+        block += "    \"file\": \"#{file_path}\"\n"
         block += "  }\n"
-        block += "},"
+        block += '},'
         # write the block to the json file
         File.open(json_file, 'a') { |f| f.puts block }
       end
@@ -201,6 +211,6 @@ module ReverseCoverage
 
   def path_to_hash(path)
     hexstr = Digest::MD5.hexdigest(path)
-    return hexstr.to_i(16)
+    hexstr.to_i(16)
   end
 end
