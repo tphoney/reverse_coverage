@@ -1,1 +1,7 @@
 inherit_from: .rubocop_todo.yml
+
+# ignore the integration folder
+AllCops:
+  Exclude:
+    - 'integrations/**/*'
+    - 'vendor/**/*'
