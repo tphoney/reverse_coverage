@@ -1,0 +1,20 @@
+kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: run rubocop
+    image: ruby:latest
+    commands:
+      - bundle config path 'vendor/bundle' --local
+      - bundle install
+      - bundle exec rubocop
+  - name: run rspec
+    image: ruby:latest
+    commands:
+      - bundle install
+      - bundle exec rspec spec
