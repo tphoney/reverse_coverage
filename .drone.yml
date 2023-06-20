@@ -1,0 +1,32 @@
+kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: run rubocop
+    image: ruby:latest
+    commands:
+      - bundle config path 'vendor/bundle' --local
+      - bundle install
+      - bundle exec rubocop
+  - name: run rspec
+    image: ruby:latest
+    commands:
+      - bundle install
+      - bundle exec rspec spec
+  - name: twilio-ruby with reverse-coverage
+    image: ruby:latest
+    commands:
+      # change to the twilo, bundle install, run reverse-coverage, check for files
+      - cd integrations/twilio-ruby
+      - pwd
+      - bundle install
+      - bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml
+      - ls tmp/
+      - ls tmp/junit.xml
+      - ls tmp/reverse_coverage.csv
+      - ls tmp/reverse_coverage.json
