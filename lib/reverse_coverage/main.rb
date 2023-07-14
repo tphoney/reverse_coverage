@@ -73,7 +73,7 @@ end
 
 # mini-test support
 module ReverseCoverageMinitest
-  def after_setup
+  def before_setup
     super
     test_file = method(name).source_location.first
     Main.add(test_file)
@@ -87,23 +87,34 @@ module ReverseCoverageMinitest
     attr_reader :coverage_matrix
     attr_accessor :config, :output_path
 
-    def add(test_information)
-      coverage_result = Coverage.peek_result
-      current_state = select_project_files(coverage_result)
-      all_changed_files = changed_lines(@last_state, current_state)
+    def add(test_filename)
+      if @old_test_filename.nil? 
+        @old_test_filename = test_filename
+        return
+      end
+      if @old_test_filename != test_filename
+        print "processing complete test filename: #{@old_test_filename}"
+        @old_test_filename = test_filename
+      
+        coverage_result = Coverage.peek_result
+        current_state = select_project_files(coverage_result)
+        all_changed_files = changed_lines(@last_state, current_state)
+        
+        all_changed_files.each do |file_path, lines|
+          # if lines array contains any non-zero values, then save the changes and move to the next file
+          non_nil_lines = lines.any? { |changed| !changed.nil? && !changed.zero? }
+          # break loop if there are no changes, or if the test_filename is already in the coverage_matrix
+          if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(@old_test_filename))
+            next
+          end
 
-      all_changed_files.each do |file_path, lines|
-        # if lines array contains any non-zero values, then save the changes and move to the next file
-        non_nil_lines = lines.any? { |changed| !changed.nil? && !changed.zero? }
-        # break loop if there are no changes, or if the test_information is already in the coverage_matrix
-        if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(test_information))
-          next
+          save_changes(coverage_matrix, file_path, @old_test_filename)
         end
 
-        save_changes(coverage_matrix, file_path, test_information)
+        reset_last_state(coverage_result)
+        
+        puts " --  resetting for new test filename: #{test_filename}\n"
       end
-
-      reset_last_state(coverage_result)
     end
 
     def initialize
@@ -123,6 +134,22 @@ module ReverseCoverageMinitest
     end
 
     def save_results
+      puts "finishing old test filename: #{@old_test_filename}"
+      coverage_result = Coverage.peek_result
+      current_state = select_project_files(coverage_result)
+      all_changed_files = changed_lines(@last_state, current_state)
+      
+      all_changed_files.each do |file_path, lines|
+        # if lines array contains any non-zero values, then save the changes and move to the next file
+        non_nil_lines = lines.any? { |changed| !changed.nil? && !changed.zero? }
+        # break loop if there are no changes, or if the test_filename is already in the coverage_matrix
+        if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(@old_test_filename))
+          next
+        end
+
+        save_changes(coverage_matrix, file_path, @old_test_filename)
+      end
+
       Coverage.result
       results_to_file(@coverage_matrix)
     end
