@@ -21,6 +21,14 @@ steps:
     commands:
       - bundle install
       - bundle exec rspec spec
+  - name: twilio-ruby without reverse-coverage
+    image: ruby:latest
+    commands:
+      # change to the twilo, bundle install, tmp should not exist
+      - cd integrations/twilio-ruby
+      - pwd
+      - bundle install
+      - bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml
   - name: twilio-ruby with reverse-coverage
     image: ruby:latest
     commands:
@@ -28,7 +36,19 @@ steps:
       - cd integrations/twilio-ruby
       - pwd
       - bundle install
-      - bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml
+      - INTEL=1 bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml
+      - ls tmp/
+      - ls tmp/junit.xml
+      - ls tmp/reverse_coverage.csv
+      - ls tmp/reverse_coverage.json
+  - name: run tests against individual files
+    image: ruby:latest
+    commands:
+      # change to the twilo, bundle install, run reverse-coverage, check for files
+      - cd integrations/twilio-ruby
+      - pwd
+      - bundle install
+      - INTEL=1 bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml spec/framework/request_spec.rb spec/framework/serialize_spec.rb spec/framework/version_spec.rb
       - ls tmp/
       - ls tmp/junit.xml
       - ls tmp/reverse_coverage.csv

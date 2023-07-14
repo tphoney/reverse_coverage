@@ -19,7 +19,7 @@ require 'rack'
 require 'twilio-ruby'
 require 'rspec/matchers'
 require 'equivalent-xml'
-require "reverse_coverage"
+require "reverse_coverage"  if ENV['INTEL']
 
 RSpec.configure do |config|
   config.expect_with :rspec do |c|
@@ -31,17 +31,19 @@ RSpec.configure do |config|
     @holodeck = Holodeck.new
     @client.http_client = @holodeck
   end
-  config.before(:suite) do
-    ReverseCoverageRspec::Main.start
-  end
+  if ENV['INTEL']
+    config.before(:suite) do
+      ReverseCoverageRspec::Main.start
+    end
 
-  config.around do |e|
-    e.run
-    ReverseCoverageRspec::Main.add(e)
-  end
+    config.around do |e|
+      e.run
+      ReverseCoverageRspec::Main.add(e)
+    end
 
-  config.after(:suite) do
-    ReverseCoverageRspec::Main.save_results
+    config.after(:suite) do
+      ReverseCoverageRspec::Main.save_results
+    end
   end
 end
 
