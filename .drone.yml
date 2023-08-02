@@ -16,12 +16,12 @@ steps:
       - bundle config path 'vendor/bundle' --local
       - bundle install
       - bundle exec rubocop
-  - name: run rspec
+  - name: run rspec, unit tests
     image: ruby:latest
     commands:
       - bundle install
       - bundle exec rspec spec
-  - name: twilio-ruby without reverse-coverage
+  - name: rspec twilio-ruby without reverse-coverage
     image: ruby:latest
     commands:
       # change to the twilo, bundle install, tmp should not exist
@@ -29,7 +29,7 @@ steps:
       - pwd
       - bundle install
       - bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml
-  - name: twilio-ruby with reverse-coverage
+  - name: rspec twilio-ruby with reverse-coverage
     image: ruby:latest
     commands:
       # change to the twilo, bundle install, run reverse-coverage, check for files
@@ -41,7 +41,7 @@ steps:
       - ls tmp/junit.xml
       - ls tmp/reverse_coverage.csv
       - ls tmp/reverse_coverage.json
-  - name: run tests against individual files
+  - name: tests rspec against individual files
     image: ruby:latest
     commands:
       # change to the twilo, bundle install, run reverse-coverage, check for files
@@ -53,3 +53,23 @@ steps:
       - ls tmp/junit.xml
       - ls tmp/reverse_coverage.csv
       - ls tmp/reverse_coverage.json
+  - name: rspec accuracy checks
+    image: ruby:latest
+    commands:
+      - cd integrations/accuracy
+      - pwd
+      - bundle install
+      - INTEL=1 bundle exec rspec spec --format RspecJunitFormatter --out tmp/junit.xml
+      - ls tmp/
+      - ls tmp/junit.xml
+      - ls tmp/reverse_coverage.csv
+      - ls tmp/reverse_coverage.json
+      # this is where we run checks against the reverse_coverage.json
+      # string_calculator_spec.rb file calls string_calculator once
+      - cat tmp/reverse_coverage.json | grep -v vendor | grep "./spec/string_calculator_spec.rb" | wc -l | xargs test 1 -eq
+      # general_spec.rb file calls both string_calculator and string_joiner
+      - cat tmp/reverse_coverage.json | grep -v vendor | grep "./spec/general_spec.rb" | wc -l | xargs test 2 -eq
+      # string_calculator_indirect_spec only has one occurance of string_calculator
+      - cat tmp/reverse_coverage.json | grep -v vendor | grep "./spec/string_calculator_indirect_spec.rb" | wc -l | xargs test 1 -eq
+      # there are no occurances of never_called.rb in the reverse_coverage.json
+      - cat tmp/reverse_coverage.json | grep -v vendor | grep "./lib/never_called.rb" | wc -l | xargs test 0 -eq

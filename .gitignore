@@ -54,3 +54,6 @@ node_modules/
 spec/faked_project/tmp/reverse_coverage.yml
 
 tmp/
+
+integrations/accuracy/vendor
+integrations/accuracy/.bundle
