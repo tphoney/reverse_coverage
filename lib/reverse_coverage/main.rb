@@ -202,42 +202,39 @@ module ReverseCoverage
     # remove the csv + json files if they already exist
     File.delete(csv_file) if File.exist?(csv_file) 
     File.delete(json_file) if File.exist?(json_file)
+    # get the working directory
+    working_directory = Dir.pwd
     counter = 0
     # iterate through coverage_matrix creating json call graph and csv file of hashed path.
     coverage_matrix.each do |file_path, test_files|
+      sanitized_file_path = sanitize_file_path(working_directory, file_path)
       # convert file_path to hash
-      hashed_path = path_to_hash(file_path)
+      hashed_path = path_to_hash(sanitized_file_path)
       # iterate through test_files
       test_files.each do |test_file|
+        sanitized_test_file = sanitize_file_path(working_directory, test_file)
         counter += 1
-        # convert test_file to hash
-        hashed_test_file = path_to_hash(test_file)
+        # convert sanitized_test_file to hash
+        hashed_test_file = path_to_hash(sanitized_test_file)
         # write to csv file
         File.open(csv_file, 'a') { |f| f.puts "#{hashed_path},#{hashed_test_file}" }
         # build json call graph block
-        block = "#{counter} {\n"
-        block += "  \"test\": {\n"
-        block += "    \"id\": #{hashed_test_file},\n"
-        block += "    \"file\": \"#{test_file}\"\n"
-        block += "  },\n"
-        block += "  \"source\": {\n"
-        block += "    \"id\": #{hashed_path},\n"
-        block += "    \"file\": \"#{file_path}\"\n"
-        block += "  }\n"
-        block += '},'
+        block = "#{counter} {\"test\": {\"id\": #{hashed_test_file}, \"file\": \"#{sanitized_test_file}\"}, \"source\": { \"id\": #{hashed_path}, \"file\": \"#{sanitized_file_path}\" }}" # rubocop:disable Layout/LineLength
         # write the block to the json file
         File.open(json_file, 'a') { |f| f.puts block }
       end
     end
-    # remove the last comma from the json file
-    File.open(json_file, 'rb+') do |f|
-      f.seek(-1, IO::SEEK_END)
-      f.truncate(f.pos)
-    end
   end
 
   def path_to_hash(path)
-    hexstr = Digest::MD5.hexdigest(path)
-    hexstr.to_i(16)
+    # convert the path to a hash
+    Digest::SHA1.hexdigest(path).to_i(16) % (2**31)
+  end
+
+  def sanitize_file_path(working_directory, path)
+    # remove the working directory from the path
+    path = path.gsub(working_directory, '')
+    # if the path starts with a / add a . to the beginning
+    path.start_with?('/') ? ".#{path}" : path
   end
 end
