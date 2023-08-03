@@ -2,3 +2,7 @@ source 'https://rubygems.org'
 gem 'simplecov', require: false, group: :test
 gem "reverse_coverage", path: "../.."
 gem 'rspec_junit_formatter'
+gem 'rake'
+gem "minitest"
+gem 'minitest-junit'
+gem 'pry'

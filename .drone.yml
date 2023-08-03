@@ -41,7 +41,7 @@ steps:
       - ls tmp/junit.xml
       - ls tmp/reverse_coverage.csv
       - ls tmp/reverse_coverage.json
-  - name: tests rspec against individual files
+  - name: rspec against individual files
     image: ruby:latest
     commands:
       # change to the twilo, bundle install, run reverse-coverage, check for files
@@ -73,3 +73,23 @@ steps:
       - cat tmp/reverse_coverage.json | grep -v vendor | grep "./spec/string_calculator_indirect_spec.rb" | wc -l | xargs test 1 -eq
       # there are no occurances of never_called.rb in the reverse_coverage.json
       - cat tmp/reverse_coverage.json | grep -v vendor | grep "./lib/never_called.rb" | wc -l | xargs test 0 -eq
+  - name: minitest accuracy checks
+    image: ruby:latest
+    commands:
+      - cd integrations/accuracy
+      - pwd
+      - bundle install
+      - INTEL=1 bundle exec rake test
+      - ls tmp/
+      - ls tmp/junit.xml
+      - ls tmp/reverse_coverage.csv
+      - ls tmp/reverse_coverage.json
+      # this is where we run checks against the reverse_coverage.json
+      # string_calculator_test.rb file calls string_calculator once
+      - cat tmp/reverse_coverage.json | grep -v vendor | grep "./test/string_calculator_test.rb" | wc -l | xargs test 1 -eq
+      # general_test.rb file calls both string_calculator and string_joiner
+      - cat tmp/reverse_coverage.json | grep -v vendor | grep "./test/general_test.rb" | wc -l | xargs test 2 -eq
+      # string_calculator_indirect_test only has one occurance of string_calculator
+      - cat tmp/reverse_coverage.json | grep -v vendor | grep "./test/string_calculator_indirect_test.rb" | wc -l | xargs test 1 -eq
+      # there are no occurances of never_called.rb in the reverse_coverage.json
+      - cat tmp/reverse_coverage.json | grep -v vendor | grep "./test/never_called.rb" | wc -l | xargs test 0 -eq
