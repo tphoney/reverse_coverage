@@ -8,7 +8,7 @@ RSpec.configure do |config|
 
     config.around do |e|
       e.run
-      ReverseCoverageRspec::Main.add(e)
+      ReverseCoverageRspec::Main.add(e, config.world.example_group_counts_by_spec_file[e.metadata[:absolute_file_path]])
     end
 
     config.after(:suite) do

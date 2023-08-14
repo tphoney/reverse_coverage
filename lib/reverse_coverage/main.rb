@@ -9,10 +9,20 @@ module ReverseCoverageRspec
     include Singleton
     include ReverseCoverage
 
-    attr_reader :coverage_matrix
+    attr_reader :coverage_matrix, :number_of_examples_run
     attr_accessor :config, :output_path
 
-    def add(example)
+    def add(example, total_examples = nil)
+      if @number_of_examples_run.nil?
+        @number_of_examples_run = 1
+      end
+      # require 'pry'; binding.pry
+      puts "#{example.metadata[:file_path]} #{number_of_examples_run}/#{total_examples}"
+      if @number_of_examples_run < total_examples
+        @number_of_examples_run += 1
+        return
+      end
+      puts "processing complete test filename: #{example.metadata[:file_path]}"
       coverage_result = Coverage.peek_result
       example_data = slice_attributes(example.metadata, *example_attributes)
       example_data[:example_ref] = example_data.hash
@@ -32,6 +42,7 @@ module ReverseCoverageRspec
       end
 
       reset_last_state
+      @number_of_examples_run = 1
     end
 
     def example_attributes
