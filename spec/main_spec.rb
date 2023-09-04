@@ -40,16 +40,13 @@ RSpec.describe ReverseCoverage do
     it 'returns an array of the difference between the current and previous state for each line in each file' do
       prev_state = {
         '/path/to/file.rb' => [1, 0, 1],
-        '/path/to/other_file.rb' => [0, 1, 1]
+        '/path/to/other_file.rb' => [0, 1, 1], '/path/no_change.rb' => [0, 1, 1], '/path/empty.rb' => []
       }
       current_state = {
         '/path/to/file.rb' => [1, 1, 1],
-        '/path/to/other_file.rb' => [0, 0, 1]
+        '/path/to/other_file.rb' => [0, 0, 1], '/path/no_change.rb' => [0, 1, 1], '/path/empty.rb' => []
       }
-      expect(changed_lines(prev_state, current_state)).to eq({
-                                                               '/path/to/file.rb' => [0, 1, 0],
-                                                               '/path/to/other_file.rb' => [0, -1, 0]
-                                                             })
+      expect(changed_lines(prev_state, current_state)).to eq(['/path/to/file.rb', '/path/to/other_file.rb'])
     end
   end
 

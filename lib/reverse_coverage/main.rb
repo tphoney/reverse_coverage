@@ -19,15 +19,7 @@ module ReverseCoverageRspec
       current_state = select_project_files(coverage_result)
       all_changed_files = changed_lines(@last_state, current_state)
       current_test_file = example.metadata[:file_path]
-
-      all_changed_files.each do |file_path, lines|
-        # if lines array contains any non-zero values, then save the changes and move to the next file
-        non_nil_lines = lines.any? { |changed| !changed.nil? && !changed.zero? }
-        # break loop if there are no changes, or if the current_test_file is already in the coverage_matrix
-        if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(current_test_file))
-          next
-        end
-
+      all_changed_files.each do |file_path|
         save_changes(coverage_matrix, file_path, current_test_file)
       end
 
@@ -101,14 +93,7 @@ module ReverseCoverageMinitest
       current_state = select_project_files(coverage_result)
       all_changed_files = changed_lines(@last_state, current_state)
 
-      all_changed_files.each do |file_path, lines|
-        # if lines array contains any non-zero values, then save the changes and move to the next file
-        non_nil_lines = lines.any? { |changed| !changed.nil? && !changed.zero? }
-        # break loop if there are no changes, or if the test_filename is already in the coverage_matrix
-        if !non_nil_lines || (coverage_matrix.key?(file_path) && coverage_matrix[file_path].include?(@old_test_filename))
-          next
-        end
-
+      all_changed_files.each do |file_path|
         save_changes(coverage_matrix, file_path, @old_test_filename)
       end
 
@@ -182,9 +167,12 @@ module ReverseCoverage
   end
 
   def changed_lines(prev_state, current_state)
-    prev_state.merge(current_state) do |_file_path, prev_lines, current_lines|
-      prev_lines.zip(current_lines).map { |prev, curr| curr.nil? || prev.nil? ? nil : curr - prev }
+    # create a hash of changed files
+    files = []
+    prev_state.merge(current_state) do |file_path, prev_lines, current_lines|
+      files << file_path if prev_lines != current_lines
     end
+    files
   end
 
   def select_project_files(coverage_result)
