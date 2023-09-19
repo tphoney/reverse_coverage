@@ -10,7 +10,7 @@ module ReverseCoverageRspec
     include ReverseCoverage
 
     attr_reader :coverage_matrix
-    attr_accessor :config, :output_path
+    attr_accessor :config
 
     def add(example)
       coverage_result = Coverage.peek_result
@@ -34,7 +34,6 @@ module ReverseCoverageRspec
       @config = {
         file_filter: ->(file_path) { file_of_project?(file_path, '/spec') }
       }
-      @output_path = 'tmp'
     end
 
     def reset_last_state(result = Coverage.peek_result)
@@ -46,9 +45,9 @@ module ReverseCoverageRspec
       reset_last_state
     end
 
-    def save_results
+    def save_results(output_path = 'tmp')
       Coverage.result
-      results_to_file(@coverage_matrix)
+      results_to_file(@coverage_matrix, output_path)
     end
 
     class << self
@@ -77,7 +76,7 @@ module ReverseCoverageMinitest
     include ReverseCoverage
 
     attr_reader :coverage_matrix
-    attr_accessor :config, :output_path
+    attr_accessor :config
 
     def add(test_filename)
       if @old_test_filename.nil?
@@ -118,7 +117,7 @@ module ReverseCoverageMinitest
       reset_last_state
     end
 
-    def save_results
+    def save_results(output_path = 'tmp')
       puts "finishing old test filename: #{@old_test_filename}"
       coverage_result = Coverage.peek_result
       current_state = select_project_files(coverage_result)
@@ -136,7 +135,7 @@ module ReverseCoverageMinitest
       end
 
       Coverage.result
-      results_to_file(@coverage_matrix)
+      results_to_file(@coverage_matrix, output_path)
     end
 
     class << self
@@ -155,7 +154,6 @@ end
 module ReverseCoverage
   OUTPUT_FILE_NAME = 'reverse_coverage.json'
   OUTPUT_CSV_FILE_NAME = 'reverse_coverage.csv'
-  OUTPUT_PATH = 'tmp'
 
   def save_changes(hash, file_path, test_information)
     hash[file_path] ||= []
@@ -183,10 +181,10 @@ module ReverseCoverage
     file_path.start_with?(Dir.pwd) && !file_path.start_with?(Dir.pwd + test_root)
   end
 
-  def results_to_file(coverage_matrix)
-    FileUtils.mkdir_p(OUTPUT_PATH)
-    csv_file = File.join(OUTPUT_PATH, OUTPUT_CSV_FILE_NAME)
-    json_file = File.join(OUTPUT_PATH, OUTPUT_FILE_NAME)
+  def results_to_file(coverage_matrix, output_path = 'tmp')
+    FileUtils.mkdir_p(output_path)
+    csv_file = File.join(output_path, OUTPUT_CSV_FILE_NAME)
+    json_file = File.join(output_path, OUTPUT_FILE_NAME)
     # remove the csv + json files if they already exist
     File.delete(csv_file) if File.exist?(csv_file) 
     File.delete(json_file) if File.exist?(json_file)

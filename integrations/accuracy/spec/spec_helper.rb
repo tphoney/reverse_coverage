@@ -12,7 +12,7 @@ RSpec.configure do |config|
     end
 
     config.after(:suite) do
-      ReverseCoverageRspec::Main.save_results
+      ReverseCoverageRspec::Main.save_results(ENV['INTEL_OUTPUT_PATH'] || 'tmp')
     end
   end
 end
