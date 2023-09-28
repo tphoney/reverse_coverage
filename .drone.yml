@@ -36,7 +36,7 @@ steps:
       - cd integrations/twilio-ruby
       - pwd
       - bundle install
-      - INTEL=1 bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml
+      - TI=1 bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml
       - ls tmp/
       - ls tmp/junit.xml
       - ls tmp/reverse_coverage.csv
@@ -48,7 +48,7 @@ steps:
       - cd integrations/twilio-ruby
       - pwd
       - bundle install
-      - INTEL=1 bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml spec/framework/request_spec.rb spec/framework/serialize_spec.rb spec/framework/version_spec.rb
+      - TI=1 bundle exec rspec --format RspecJunitFormatter --out tmp/junit.xml spec/framework/request_spec.rb spec/framework/serialize_spec.rb spec/framework/version_spec.rb
       - ls tmp/
       - ls tmp/junit.xml
       - ls tmp/reverse_coverage.csv
@@ -59,7 +59,7 @@ steps:
       - cd integrations/accuracy
       - pwd
       - bundle install
-      - INTEL=1 bundle exec rspec spec --format RspecJunitFormatter --out tmp/junit.xml
+      - TI=1 bundle exec rspec spec --format RspecJunitFormatter --out tmp/junit.xml
       - ls tmp/
       - ls tmp/junit.xml
       - ls tmp/reverse_coverage.csv

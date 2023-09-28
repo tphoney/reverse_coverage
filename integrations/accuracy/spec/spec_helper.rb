@@ -1,7 +1,7 @@
-require "reverse_coverage"  if ENV['INTEL']
+require "reverse_coverage"  if ENV['TI']
 
 RSpec.configure do |config|
-  if ENV['INTEL']
+  if ENV['TI']
     config.before(:suite) do
       ReverseCoverageRspec::Main.start
     end
@@ -12,7 +12,7 @@ RSpec.configure do |config|
     end
 
     config.after(:suite) do
-      ReverseCoverageRspec::Main.save_results(ENV['INTEL_OUTPUT_PATH'] || 'tmp')
+      ReverseCoverageRspec::Main.save_results(ENV['TI_OUTPUT_PATH'] || 'tmp')
     end
   end
 end

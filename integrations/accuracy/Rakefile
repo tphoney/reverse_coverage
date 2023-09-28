@@ -1,0 +1,6 @@
+require 'rspec/core/rake_task'
+
+RSpec::Core::RakeTask.new(:TI) do |t|
+  junit_path = ENV['TI_OUTPUT_PATH'] || 'tmp'
+  t.rspec_opts = ["--format RspecJunitFormatter", "--out #{junit_path}/junit.xml"]
+end
